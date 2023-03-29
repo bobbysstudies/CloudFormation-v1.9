@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      #This makes the S3 bucket public which is needed if you are hosting a static website in an S3 bucket
+      AccessControl: PublicRead
+      # This automates the name of the bucket since it has to be unique. Errors out in us-east-1 but works in other regions.
+      BucketName: !Join ["-", [!Ref "AWS::StackName", !Ref "AWS::Region"]]
+      #This enables Static Web Hosting in S3
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+  #This section writes a bucket policy to allow people to access the bucket. Otherwise the website would still be unreachable.      
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref S3Bucket, '/*']]
